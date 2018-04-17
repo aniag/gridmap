@@ -640,14 +640,10 @@ def send_error_mail(job):
 
         time = [HEARTBEAT_FREQUENCY * i for i in range(len(job.track_mem))]
 
-        # attack mem plot
+        # attach mem plot
         img_mem_fn = os.path.join('/tmp', "{}_mem.png".format(job.id))
-        plt.figure(1)
-        plt.plot(time, job.track_mem, "-o")
-        plt.xlabel("time (s)")
-        plt.ylabel("memory usage")
-        plt.savefig(img_mem_fn)
-        plt.close()
+        rss_mem_data = job.track_mem
+        save_plot(time, rss_mem_data, "time (s)", "memory usage", img_mem_fn)
         with open(img_mem_fn, "rb") as img_mem:
             img_data = img_mem.read()
         img_mem_attachement = MIMEImage(img_data)
@@ -657,12 +653,8 @@ def send_error_mail(job):
 
         # attach cpu plot
         img_cpu_fn = os.path.join("/tmp", "{}_cpu.png".format(job.id))
-        plt.figure(2)
-        plt.plot(time, [cpu_load for cpu_load, _ in job.track_cpu], "-o")
-        plt.xlabel("time (s)")
-        plt.ylabel("cpu load")
-        plt.savefig(img_cpu_fn)
-        plt.close()
+        cpu_load_data = [cpu_load for cpu_load, _ in job.track_cpu]
+        save_plot(time, cpu_load_data, "time (s)", "cpu_load", img_cpu_fn)
         with open(img_cpu_fn, "rb") as img_cpu:
             img_data = img_cpu.read()
         img_cpu_attachement = MIMEImage(img_data)
@@ -677,6 +669,15 @@ def send_error_mail(job):
     if CREATE_PLOTS:
         os.unlink(img_cpu_fn)
         os.unlink(img_mem_fn)
+
+
+def save_plot(x_data, y_data, x_label, y_label, file_path):
+    plt.figure()
+    plt.plot(x_data, y_data, '-o')
+    plt.xlabel(x_label)
+    plt.ylabel(y_label)
+    plt.savefig(file_path)
+    plt.close()
 
 
 def handle_resubmit(session_id, job, temp_dir=DEFAULT_TEMP_DIR):
