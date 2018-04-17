@@ -633,11 +633,16 @@ def send_error_mail(job):
 
         time = [HEARTBEAT_FREQUENCY * i for i in range(len(job.track_mem))]
 
-        # attach mem plot
-        img_mem_fn = os.path.join('/tmp', "{}_mem.png".format(job.id))
-        rss_mem_data = job.track_mem
-        save_plot(time, rss_mem_data, "time (s)", "memory usage", img_mem_fn)
-        attachments.append(create_image_attachment(img_mem_fn))
+        # attach mem plots
+        rss_mem_data, vmem_data = zip(*job.track_mem)
+
+        img_rss_mem_fn = os.path.join('/tmp', "{}_rss_mem.png".format(job.id))
+        save_plot(time, rss_mem_data, "time (s)", "memory usage", img_rss_mem_fn)
+        attachments.append(create_image_attachment(img_rss_mem_fn))
+
+        img_vmem_fn = os.path.join('/tmp', "{}_vmem.png".format(job.id))
+        save_plot(time, vmem_data, "time (s)", "memory usage", img_vmem_fn)
+        attachments.append(create_image_attachment(img_vmem_fn))
 
         # attach cpu plot
         img_cpu_fn = os.path.join("/tmp", "{}_cpu.png".format(job.id))
@@ -651,7 +656,8 @@ def send_error_mail(job):
     # Clean up plot temporary files
     if CREATE_PLOTS:
         os.unlink(img_cpu_fn)
-        os.unlink(img_mem_fn)
+        os.unlink(img_rss_mem_fn)
+        os.unlink(img_vmem_fn)
 
 
 def save_plot(x_data, y_data, x_label, y_label, file_path):
@@ -668,7 +674,7 @@ def create_image_attachment(file_path):
         img_data = img.read()
     img_attachment = MIMEImage(img_data)
     img_attachment.add_header('Content-Disposition', 'attachment',
-                                   filename=os.path.basename(file_path))
+                              filename=os.path.basename(file_path))
     return img_attachment
 
 

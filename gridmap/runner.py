@@ -114,14 +114,16 @@ def get_memory_usage(pid, heart_pid):
     :returns: Total memory usage of process (and children) in Mb.
     """
     process = psutil.Process(pid)
-    mem_total = float(process.memory_info()[0])
+    rss_mem_total = float(process.memory_info().rss)
+    vms_mem_total = float(process.memory_info().vms)
     for p in process.children(recursive=True):
         if p.is_running() and p.pid != heart_pid:
             try:
-                mem_total += float(p.memory_info()[0])
+                rss_mem_total += float(p.memory_info().rss)
+                vms_mem_total += float(p.memory_info().vms)
             except psutil.NoSuchProcess:
                 continue
-    return mem_total / (1024.0 ** 2.0)
+    return rss_mem_total / (1024.0 ** 2.0), vms_mem_total / (1024.0 ** 2.0)
 
 
 def get_cpu_load(pid, heart_pid):
