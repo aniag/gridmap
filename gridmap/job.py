@@ -630,13 +630,6 @@ def send_error_mail(job):
 
     # if matplotlib is installed
     if CREATE_PLOTS:
-        #TODO: plot to cstring directly (some code is there)
-        #imgData = cStringIO.StringIO()
-        #plt.savefig(imgData, format='png')
-
-        # rewind the data
-        #imgData.seek(0)
-        #plt.savefig(imgData, format="png")
 
         time = [HEARTBEAT_FREQUENCY * i for i in range(len(job.track_mem))]
 
