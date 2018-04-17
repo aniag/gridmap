@@ -147,7 +147,7 @@ def get_cpu_load(pid, heart_pid):
         # Make sure this process hasn't exited before querying its status
         if p.is_running() and p.pid != heart_pid:
             try:
-                cpu_sum += float(p.cpu_percent())
+                cpu_sum += float(p.cpu_percent(interval=0.4))
                 running = running or (p.status not in _SLEEP_STATUSES)
             except psutil.NoSuchProcess:
                 continue
