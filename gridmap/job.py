@@ -421,6 +421,21 @@ class JobMonitor(object):
                                 job.ret = msg["data"]
                             job.timestamp = datetime.now()
 
+                            time = [HEARTBEAT_FREQUENCY * i for i in range(len(job.track_mem))]
+                            x_label = "time (s)"
+
+                            rss_mem_data, vmem_data = zip(*job.track_mem)
+
+                            img_rss_mem_fn = os.path.join(DEFAULT_TEMP_DIR, "{}_{}_rss_mem.png".format(job.name, job.id))
+                            save_plot(time, rss_mem_data, x_label, "RSS memory usage", img_rss_mem_fn)
+
+                            img_vmem_fn = os.path.join(DEFAULT_TEMP_DIR, "{}_{}_vmem.png".format(job.name, job.id))
+                            save_plot(time, vmem_data, x_label, "VIRT memory usage", img_vmem_fn)
+
+                            img_cpu_fn = os.path.join(DEFAULT_TEMP_DIR, "{}_{}_cpu.png".format(job.name, job.id))
+                            cpu_load_data = [cpu_load for cpu_load, _ in job.track_cpu]
+                            save_plot(time, cpu_load_data, x_label, "cpu_load", img_cpu_fn)
+
                         if msg["command"] == "heart_beat":
                             job.heart_beat = msg["data"]
 
@@ -636,16 +651,16 @@ def send_error_mail(job):
         # attach mem plots
         rss_mem_data, vmem_data = zip(*job.track_mem)
 
-        img_rss_mem_fn = os.path.join('/tmp', "{}_rss_mem.png".format(job.id))
+        img_rss_mem_fn = os.path.join('/tmp', "{}_{}_rss_mem.png".format(job.name, job.id))
         save_plot(time, rss_mem_data, "time (s)", "memory usage", img_rss_mem_fn)
         attachments.append(create_image_attachment(img_rss_mem_fn))
 
-        img_vmem_fn = os.path.join('/tmp', "{}_vmem.png".format(job.id))
+        img_vmem_fn = os.path.join('/tmp', "{}_{}_vmem.png".format(job.name, job.id))
         save_plot(time, vmem_data, "time (s)", "memory usage", img_vmem_fn)
         attachments.append(create_image_attachment(img_vmem_fn))
 
         # attach cpu plot
-        img_cpu_fn = os.path.join("/tmp", "{}_cpu.png".format(job.id))
+        img_cpu_fn = os.path.join("/tmp", "{}_{}_cpu.png".format(job.name, job.id))
         cpu_load_data = [cpu_load for cpu_load, _ in job.track_cpu]
         save_plot(time, cpu_load_data, "time (s)", "cpu_load", img_cpu_fn)
         attachments.append(create_image_attachment(img_cpu_fn))
