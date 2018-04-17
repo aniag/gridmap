@@ -644,23 +644,13 @@ def send_error_mail(job):
         img_mem_fn = os.path.join('/tmp', "{}_mem.png".format(job.id))
         rss_mem_data = job.track_mem
         save_plot(time, rss_mem_data, "time (s)", "memory usage", img_mem_fn)
-        with open(img_mem_fn, "rb") as img_mem:
-            img_data = img_mem.read()
-        img_mem_attachement = MIMEImage(img_data)
-        img_mem_attachement.add_header('Content-Disposition', 'attachment',
-                                       filename=os.path.basename(img_mem_fn))
-        attachments.append(img_mem_attachement)
+        attachments.append(create_image_attachment(img_mem_fn))
 
         # attach cpu plot
         img_cpu_fn = os.path.join("/tmp", "{}_cpu.png".format(job.id))
         cpu_load_data = [cpu_load for cpu_load, _ in job.track_cpu]
         save_plot(time, cpu_load_data, "time (s)", "cpu_load", img_cpu_fn)
-        with open(img_cpu_fn, "rb") as img_cpu:
-            img_data = img_cpu.read()
-        img_cpu_attachement = MIMEImage(img_data)
-        img_cpu_attachement.add_header('Content-Disposition', 'attachment',
-                                       filename=os.path.basename(img_cpu_fn))
-        attachments.append(img_cpu_attachement)
+        attachments.append(create_image_attachment(img_cpu_fn))
 
     # Send mail
     _send_mail(subject, body_text, attachments)
@@ -678,6 +668,15 @@ def save_plot(x_data, y_data, x_label, y_label, file_path):
     plt.ylabel(y_label)
     plt.savefig(file_path)
     plt.close()
+
+
+def create_image_attachment(file_path):
+    with open(file_path, "rb") as img:
+        img_data = img.read()
+    img_attachment = MIMEImage(img_data)
+    img_attachment.add_header('Content-Disposition', 'attachment',
+                                   filename=os.path.basename(file_path))
+    return img_attachment
 
 
 def handle_resubmit(session_id, job, temp_dir=DEFAULT_TEMP_DIR):
