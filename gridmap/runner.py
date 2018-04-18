@@ -189,7 +189,7 @@ def _run_job(job_id, address, error_path):
     :param address: IP address of submitting host.
     :type address: str
     :param error_path: Path to the error file (needed for SLURM only)
-    :type address: str
+    :type error_path: str
     """
     # create heart beat process
     logger = logging.getLogger(__name__)
