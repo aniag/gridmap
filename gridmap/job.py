@@ -421,20 +421,7 @@ class JobMonitor(object):
                                 job.ret = msg["data"]
                             job.timestamp = datetime.now()
 
-                            time = [HEARTBEAT_FREQUENCY * i for i in range(len(job.track_mem))]
-                            x_label = "time (s)"
-
-                            rss_mem_data, vmem_data = zip(*job.track_mem)
-
-                            img_rss_mem_fn = os.path.join(DEFAULT_TEMP_DIR, "{}_{}_rss_mem.png".format(job.name, job.id))
-                            save_plot(time, rss_mem_data, x_label, "RSS memory usage", img_rss_mem_fn)
-
-                            img_vmem_fn = os.path.join(DEFAULT_TEMP_DIR, "{}_{}_vmem.png".format(job.name, job.id))
-                            save_plot(time, vmem_data, x_label, "VIRT memory usage", img_vmem_fn)
-
-                            img_cpu_fn = os.path.join(DEFAULT_TEMP_DIR, "{}_{}_cpu.png".format(job.name, job.id))
-                            cpu_load_data = [cpu_load for cpu_load, _ in job.track_cpu]
-                            save_plot(time, cpu_load_data, x_label, "cpu_load", img_cpu_fn)
+                            plot_job_resources(job, DEFAULT_TEMP_DIR)
 
                         if msg["command"] == "heart_beat":
                             job.heart_beat = msg["data"]
@@ -646,33 +633,40 @@ def send_error_mail(job):
     # if matplotlib is installed
     if CREATE_PLOTS:
 
-        time = [HEARTBEAT_FREQUENCY * i for i in range(len(job.track_mem))]
-
-        # attach mem plots
-        rss_mem_data, vmem_data = zip(*job.track_mem)
-
-        img_rss_mem_fn = os.path.join('/tmp', "{}_{}_rss_mem.png".format(job.name, job.id))
-        save_plot(time, rss_mem_data, "time (s)", "memory usage", img_rss_mem_fn)
-        attachments.append(create_image_attachment(img_rss_mem_fn))
-
-        img_vmem_fn = os.path.join('/tmp', "{}_{}_vmem.png".format(job.name, job.id))
-        save_plot(time, vmem_data, "time (s)", "memory usage", img_vmem_fn)
-        attachments.append(create_image_attachment(img_vmem_fn))
-
-        # attach cpu plot
-        img_cpu_fn = os.path.join("/tmp", "{}_{}_cpu.png".format(job.name, job.id))
-        cpu_load_data = [cpu_load for cpu_load, _ in job.track_cpu]
-        save_plot(time, cpu_load_data, "time (s)", "cpu_load", img_cpu_fn)
-        attachments.append(create_image_attachment(img_cpu_fn))
+        # create plots
+        plot_files = plot_job_resources(job, '/tmp')
+        for f in plot_files:
+            # attach plots
+            attachments.append(create_image_attachment(f))
 
     # Send mail
     _send_mail(subject, body_text, attachments)
 
     # Clean up plot temporary files
     if CREATE_PLOTS:
-        os.unlink(img_cpu_fn)
-        os.unlink(img_rss_mem_fn)
-        os.unlink(img_vmem_fn)
+        for f in plot_files:
+            os.unlink(f)
+
+
+def plot_job_resources(job, plot_dir):
+    time = [HEARTBEAT_FREQUENCY * i for i in range(len(job.track_mem))]
+
+    files = []
+
+    rss_mem_data, vmem_data = zip(*job.track_mem)
+
+    img_rss_mem_fn = os.path.join(plot_dir, "{}_{}_rss_mem.png".format(job.name, job.id))
+    save_plot(time, rss_mem_data, "time (s)", "memory usage", img_rss_mem_fn)
+    files.append(img_rss_mem_fn)
+    img_vmem_fn = os.path.join(plot_dir, "{}_{}_vmem.png".format(job.name, job.id))
+    save_plot(time, vmem_data, "time (s)", "memory usage", img_vmem_fn)
+    files.append(img_vmem_fn)
+    img_cpu_fn = os.path.join(plot_dir, "{}_{}_cpu.png".format(job.name, job.id))
+    cpu_load_data = [cpu_load for cpu_load, _ in job.track_cpu]
+    save_plot(time, cpu_load_data, "time (s)", "cpu_load", img_cpu_fn)
+    files.append(img_cpu_fn)
+
+    return files
 
 
 def save_plot(x_data, y_data, x_label, y_label, file_path):
