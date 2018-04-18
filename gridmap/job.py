@@ -66,6 +66,7 @@ from gridmap.conf import (CHECK_FREQUENCY, CREATE_PLOTS, DEFAULT_QUEUE,
                           DEFAULT_TEMP_DIR, DEFAULT_PAR_ENV)
 from gridmap.data import zdumps, zloads
 from gridmap.runner import _heart_beat
+from gridmap.utils import get_scheduler_type
 
 
 class DRMAANotPresentException(ImportError):
@@ -827,6 +828,12 @@ def _append_job_to_session(session, job, temp_dir=DEFAULT_TEMP_DIR, quiet=True):
     jt.workingDirectory = job.working_dir
     jt.outputPath = ":{}".format(temp_dir)
     jt.errorPath = ":{}".format(temp_dir)
+    scheduler_type = get_scheduler_type(session)
+    ts = datetime.now().isoformat('_')
+    if scheduler_type == 'SLURM':
+        jt.outputPath += '/{}_slurm_{}.out'.format(job.name, ts)
+        jt.errorPath += '/{}_slurm_{}.err'.format(job.name, ts)
+        jt.args = jt.args + [jt.errorPath]
 
     # Create temp directory if necessary
     if not os.path.exists(temp_dir):
@@ -841,10 +848,14 @@ def _append_job_to_session(session, job, temp_dir=DEFAULT_TEMP_DIR, quiet=True):
 
     # set job fields that depend on the job_id assigned by grid engine
     job.id = job_id
-    job.log_stdout_fn = os.path.join(temp_dir, '{}.o{}'.format(job.name,
-                                                               job_id))
-    job.log_stderr_fn = os.path.join(temp_dir, '{}.e{}'.format(job.name,
-                                                               job_id))
+    if scheduler_type == 'SGE':
+        job.log_stdout_fn = os.path.join(temp_dir, '{}.o{}'.format(job.name,
+                                                                   job_id))
+        job.log_stderr_fn = os.path.join(temp_dir, '{}.e{}'.format(job.name,
+                                                                   job_id))
+    else:
+        job.log_stdout_fn = jt.outputPath
+        job.log_stderr_fn = jt.errorPath
 
     if not quiet:
         print('Your job {} has been submitted with id {}'.format(job.name,

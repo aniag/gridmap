@@ -47,6 +47,7 @@ import zmq
 
 from gridmap.conf import HEARTBEAT_FREQUENCY
 from gridmap.data import zloads, zdumps
+from gridmap.utils import get_scheduler_type
 
 
 # Set of "not running" job statuses
@@ -179,7 +180,7 @@ def get_job_status(parent_pid, heart_pid):
     return status_container
 
 
-def _run_job(job_id, address):
+def _run_job(job_id, address, error_path):
     """
     Execute the pickled job and produce pickled output.
 
@@ -187,13 +188,18 @@ def _run_job(job_id, address):
     :type job_id: int
     :param address: IP address of submitting host.
     :type address: str
+    :param error_path: Path to the error file (needed for SLURM only)
+    :type address: str
     """
     # create heart beat process
     logger = logging.getLogger(__name__)
     parent_pid = os.getpid()
+    log_path = os.environ['SGE_STDERR_PATH'] if get_scheduler_type() == 'SGE' else error_path
+    assert log_path is not None, 'Error path has to be explicitly specified for clusters different than SGE'
+    logger.debug('Log path: {}'.format(log_path))
     heart = multiprocessing.Process(target=_heart_beat,
                                     args=(job_id, address, parent_pid,
-                                          os.environ['SGE_STDERR_PATH'],
+                                          log_path,
                                           HEARTBEAT_FREQUENCY))
     logger.info("Starting heart beat")
     heart.start()
@@ -263,6 +269,8 @@ def _main():
                         help='Directory that contains module containing pickled\
                               function. This will get added to PYTHONPATH \
                               temporarily.')
+    parser.add_argument('error_path', nargs='?', default=None,
+                        help='Error file path (needed only for SLURM).')
     args = parser.parse_args()
 
     # Make warnings from built-in warnings module get formatted more nicely
@@ -274,12 +282,16 @@ def _main():
     logger.info("Appended {0} to PYTHONPATH".format(args.module_dir))
     sys.path.insert(0, args.module_dir)
 
-    logger.debug("Job ID: %s\tHome address: %s\tModule dir: %s",
-                 os.environ['JOB_ID'],
-                 args.home_address, args.module_dir)
+    job_id = os.environ['JOB_ID'] if get_scheduler_type() == 'SGE' else os.environ['SLURM_JOB_ID']
+
+    logger.debug("Job ID: %s\tHome address: %s\tModule dir: %s\tError path: %s",
+                 job_id,
+                 args.home_address,
+                 args.module_dir,
+                 args.error_path)
 
     # Process the database and get job started
-    _run_job(os.environ['JOB_ID'], args.home_address)
+    _run_job(job_id, args.home_address, args.error_path)
 
 
 if __name__ == "__main__":

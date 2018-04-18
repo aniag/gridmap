@@ -77,6 +77,7 @@ from gridmap.conf import (CHECK_FREQUENCY, CREATE_PLOTS, DEFAULT_QUEUE,
 from gridmap.job import (Job, JobException, process_jobs, grid_map,
                          DRMAANotPresentException)
 from gridmap.version import __version__, VERSION
+from gridmap.utils import get_scheduler_type
 
 # For * imports
 __all__ = ['Job', 'JobException', 'process_jobs', 'grid_map',
