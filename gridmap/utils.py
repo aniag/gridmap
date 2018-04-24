@@ -10,6 +10,9 @@ def get_scheduler_type(session=None):
     }
     if session:
         return scheduler_type_dict.get(session.drmsInfo.split()[0])
-    from drmaa import Session
-    cluster_type = Session.drmsInfo.split()[0]
-    return scheduler_type_dict.get(cluster_type)
+    try:
+        from drmaa import Session
+        cluster_type = Session.drmsInfo.split()[0]
+        return scheduler_type_dict.get(cluster_type)
+    except (ImportError, RuntimeError, OSError):
+        return None
