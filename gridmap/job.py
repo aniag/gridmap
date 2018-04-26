@@ -654,7 +654,11 @@ def plot_job_resources(job, plot_dir):
 
     files = []
 
-    rss_mem_data, vmem_data = zip(*job.track_mem) if job.track_mem else [], []
+    if not job.track_mem:
+        rss_mem_data = []
+        vmem_data = []
+    else:
+        rss_mem_data, vmem_data = zip(*job.track_mem)
 
     img_rss_mem_fn = os.path.join(plot_dir, "{}_{}_rss_mem.png".format(job.name, job.id))
     save_plot(time, rss_mem_data, "time (s)", "memory usage", img_rss_mem_fn)
