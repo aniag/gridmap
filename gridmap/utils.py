@@ -4,7 +4,7 @@ __author__ = 'glazek'
 def get_scheduler_type(session=None):
     scheduler_type_dict = {
         'GE': 'SGE',
-        'OSG/GE': 'SGE',
+        'OGS/GE': 'SGE',
         'SGE': 'SGE',
         'SLURM': 'SLURM'
     }
