@@ -57,7 +57,7 @@ from smtplib import (SMTPRecipientsRefused, SMTPHeloError, SMTPSenderRefused,
 
 import zmq
 
-from gridmap.conf import (CHECK_FREQUENCY, CREATE_PLOTS, DEFAULT_QUEUE,
+from gridmap.conf import (CHECK_FREQUENCY, CREATE_PLOTS, STORE_PLOTS, DEFAULT_QUEUE,
                           DRMAA_PRESENT, ERROR_MAIL_RECIPIENT,
                           ERROR_MAIL_SENDER, HEARTBEAT_FREQUENCY,
                           IDLE_THRESHOLD, MAX_IDLE_HEARTBEATS,
@@ -422,7 +422,8 @@ class JobMonitor(object):
                                 job.ret = msg["data"]
                             job.timestamp = datetime.now()
 
-                            plot_job_resources(job, DEFAULT_TEMP_DIR)
+                            if STORE_PLOTS:
+                                plot_job_resources(job, DEFAULT_TEMP_DIR)
 
                         if msg["command"] == "heart_beat":
                             job.heart_beat = msg["data"]

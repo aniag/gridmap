@@ -94,6 +94,8 @@ if CREATE_PLOTS:
                        ' in debug emails.')
         CREATE_PLOTS = False
 
+STORE_PLOTS = CREATE_PLOTS and os.getenv('STORE_PLOTS', 'False').upper() != 'FALSE'
+
 # Global settings ####
 # email settings
 SEND_ERROR_MAIL = 'TRUE' == os.getenv('SEND_ERROR_MAIL', 'True').upper()
